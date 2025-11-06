@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MomAI</title>
+        <link rel="icon" type="image/png" href="assets/icon.png">
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="scheduler-styles.css">
+        <script src="node_modules/marked/marked.min.js"></script>
+    </head>
+    <body>
+        <!-- Tela de Loading -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-logo">
+                    <div class="logo-circle">
+                        <img src="assets/logo.png" alt="MomAI Logo" class="logo-image">
+                    </div>
+                    <div class="pulse-ring"></div>
+                    <div class="pulse-ring pulse-ring-delay"></div>
+                </div>
+                <h1 class="loading-title">MomAI v2</h1>
+                <div class="loading-status" id="loading-status">Conectando ao servidor...</div>
+                <div class="loading-bar">
+                    <div class="loading-bar-fill"></div>
+                </div>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Título Personalizada -->
+        <div class="titlebar">
+            <div class="titlebar-drag-region">
+                <div class="titlebar-left">
+                    <div class="app-icon">
+                        <img src="assets/icon.png" alt="MomAI Icon" class="titlebar-icon-img">
+                    </div>
+                    <span class="app-title">MomAI v2</span>
+                </div>
+                
+                <div class="titlebar-center">
+                    <!-- Reconhecimento Facial - Minimalista -->
+                    <div id="titlebar-facial" class="titlebar-facial">
+                        <div class="titlebar-facial-photo"></div>
+                        <span class="titlebar-facial-name">Aguardando reconhecimento...</span>
+                    </div>
+                    
+                    <!-- Controles de Performance -->
+                    <div class="titlebar-controls">
+                        <button class="titlebar-toggle-btn active" id="facial-toggle-btn" onclick="toggleFacialRecognition()" title="Reconhecimento Facial">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="4"></circle>
+                                <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+                            </svg>
+                            <span>Face</span>
+                        </button>
+                        
+                        <button class="titlebar-toggle-btn active" id="voice-toggle-btn" onclick="toggleVoice()" title="Síntese de Voz">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                            <span>Voz</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Botão Schedulers -->
+                    <button class="titlebar-scheduler-btn" id="schedulers-btn" onclick="openSchedulerModal()" title="Gerenciar Agendamentos">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Schedulers</span>
+                    </button>
+                </div>
+                
+                <div class="titlebar-right">
+                    <button class="titlebar-button" id="minimize-btn" title="Minimizar">
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <rect x="1" y="6" width="12" height="2" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button class="titlebar-button" id="maximize-btn" title="Maximizar">
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <rect x="2" y="2" width="10" height="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        </svg>
+                    </button>
+                    <button class="titlebar-button close-btn" id="close-btn" title="Fechar">
+                        <svg width="14" height="14" viewBox="0 0 14 14">
+                            <path d="M2 2 L12 12 M12 2 L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popup Unificado -->
+        <div id="unified-popup" class="popup-overlay" style="display: none;">
+            <div class="popup-content popup-unified">
+                <div class="popup-header">
+                    <h3 id="unified-sender">Contato</h3>
+                    <div class="popup-header-right">
+                        <span id="unified-number" class="popup-number"></span>
+                        <span id="queue-badge" class="queue-badge" style="display: none;">+0 na fila</span>
+                    </div>
+                </div>
+                <div class="popup-summary" id="unified-summary">
+                    Descrição da mensagem...
+                </div>
+                <div class="popup-original">
+                    <strong>Mensagem original:</strong>
+                    <p id="unified-original"></p>
+                </div>
+                
+                <!-- Sugestões de Resposta (Botões) -->
+                <div class="popup-section">
+                    <label>Sugestões de resposta:</label>
+                    <div class="popup-suggestions" id="unified-suggestions">
+                        <!-- Botões dinâmicos aqui -->
+                    </div>
+                </div>
+                
+                <!-- Input Personalizado -->
+                <div class="popup-section">
+                    <label>Ou escreva sua resposta:</label>
+                    <textarea id="unified-input" placeholder="Digite sua resposta personalizada..." rows="3"></textarea>
+                </div>
+                
+                <!-- Ações -->
+                <div class="popup-buttons">
+                    <button onclick="sendUnifiedResponse()" class="btn-send">Enviar Resposta</button>
+                    <button onclick="closeUnifiedPopup()" class="btn-cancel">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Schedulers -->
+        <div id="scheduler-modal" class="popup-overlay" style="display: none;">
+            <div class="popup-content scheduler-modal-content">
+                <div class="scheduler-modal-header">
+                    <h2>Gerenciar Agendamentos</h2>
+                    <button onclick="closeSchedulerModal()" class="close-modal-btn">✕</button>
+                </div>
+
+                <div class="scheduler-modal-body">
+                    <!-- Lista de Schedulers Existentes -->
+                    <div class="scheduler-list-section">
+                        <h3>Agendamentos Ativos</h3>
+                        <div id="scheduler-list" class="scheduler-list">
+                            <!-- Lista será preenchida dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Formulário de Novo/Editar Scheduler -->
+                    <div class="scheduler-form-section">
+                        <h3 id="form-title">Novo Agendamento</h3>
+                        <form id="scheduler-form" onsubmit="saveScheduler(event)">
+                            <div class="form-group">
+                                <label>Nome do Agendamento:</label>
+                                <input type="text" id="scheduler-name" placeholder="Ex: Lembrete de água" required />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Prompt (o que executar):</label>
+                                <textarea id="scheduler-prompt" placeholder="Ex: Me lembre de tomar água" rows="3" required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Tipo de Agendamento:</label>
+                                <select id="scheduler-type" onchange="updateScheduleFields()">
+                                    <option value="date">Data/Hora Única</option>
+                                    <option value="interval">Intervalo (Repetir)</option>
+                                    <option value="cron">Dias/Horários Específicos</option>
+                                </select>
+                            </div>
+
+                            <!-- Campos dinâmicos baseados no tipo -->
+                            <div id="schedule-fields">
+                                <!-- Data Única (padrão) -->
+                                <div id="date-fields" class="schedule-type-fields">
+                                    <div class="form-group">
+                                        <label>Data e Hora:</label>
+                                        <input type="datetime-local" id="date-datetime" />
+                                    </div>
+                                </div>
+
+                                <!-- Intervalo -->
+                                <div id="interval-fields" class="schedule-type-fields" style="display: none;">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>A cada:</label>
+                                            <input type="number" id="interval-value" min="1" value="1" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Unidade:</label>
+                                            <select id="interval-unit">
+                                                <option value="minutes">Minutos</option>
+                                                <option value="hours">Horas</option>
+                                                <option value="days">Dias</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cron -->
+                                <div id="cron-fields" class="schedule-type-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label>Dias da Semana:</label>
+                                        <div class="weekday-selector">
+                                            <label><input type="checkbox" value="mon" /> Seg</label>
+                                            <label><input type="checkbox" value="tue" /> Ter</label>
+                                            <label><input type="checkbox" value="wed" /> Qua</label>
+                                            <label><input type="checkbox" value="thu" /> Qui</label>
+                                            <label><input type="checkbox" value="fri" /> Sex</label>
+                                            <label><input type="checkbox" value="sat" /> Sáb</label>
+                                            <label><input type="checkbox" value="sun" /> Dom</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Hora:</label>
+                                            <input type="number" id="cron-hour" min="0" max="23" value="9" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Minuto:</label>
+                                            <input type="number" id="cron-minute" min="0" max="59" value="0" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-create" id="form-submit-btn">Criar Agendamento</button>
+                                <button type="button" onclick="cancelEdit()" class="btn-reset" id="form-cancel-btn">Limpar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Container Principal com Resizers -->
+        <div class="main-container">
+            <!-- Seção Esquerda (Cards de Status) -->
+            <div class="left-section">
+                <div class="status-grid">
+                    <!-- Card: Notificações -->
+                    <div class="status-card">
+                        <div class="card-header">
+                            <h3>Notificações</h3>
+                            <span class="card-badge" id="notifications-badge">0</span>
+                        </div>
+                        <div class="card-content" id="notifications-container"></div>
+                    </div>
+
+                    <!-- Card: WhatsApp -->
+                    <div class="status-card">
+                        <div class="card-header">
+                            <h3>WhatsApp</h3>
+                            <span class="card-badge" id="whatsapp-badge">0</span>
+                        </div>
+                        <div class="card-content" id="whatsapp-container"></div>
+                    </div>
+
+                    <!-- Card: Próximos Agendamentos -->
+                    <div class="status-card">
+                        <div class="card-header">
+                            <h3>Agendamentos</h3>
+                            <span class="card-badge" id="schedulers-badge">0</span>
+                        </div>
+                        <div class="card-content" id="schedulers-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área Central (Vazia, apenas para ocupar espaço) -->
+            <div class="center-spacer">
+                <!-- Átomo Flutuante (Posicionado absolutamente sobre esta área) -->
+                <div class="atom-floating">
+                    <div class="atom-container">
+                        <div class="atom-nucleus"></div>
+                        <div class="atom-orbit orbit-1">
+                            <div class="electron"></div>
+                        </div>
+                        <div class="atom-orbit orbit-2">
+                            <div class="electron"></div>
+                        </div>
+                        <div class="atom-orbit orbit-3">
+                            <div class="electron"></div>
+                        </div>
+                    </div>
+                    <div class="activity-status" id="activity-status">Sistema em espera</div>
+                </div>
+            </div>
+
+            <!-- Resizer Vertical -->
+            <div class="resizer-vertical" data-direction="vertical"></div>
+
+            <!-- Seção Direita (Chat) -->
+            <div class="right-section">
+                <div class="panel panel-chat">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h1 style="margin: 0;">Chat</h1>
+                        <button onclick="clearConversationHistory()" style="padding: 6px 12px; font-size: 0.8rem; background: #2a2a2a; color: #888;" title="Limpar histórico">Limpar</button>
+                    </div>
+                    <div id="status" class="status disconnected">Conectando...</div>
+                    <ul id='messages'></ul>
+                    
+                    <form action="" onsubmit="sendMessage(event)">
+                        <div class="input-with-tool">
+                            <!-- Botão de Tools -->
+                            <div class="tool-button-container">
+                                <button type="button" id="tool-button" class="tool-button" title="Selecionar ferramenta">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                                
+                                <!-- Dropdown de Tools -->
+                                <div id="tool-dropdown" class="tool-dropdown">
+                                    <div class="tool-dropdown-header">
+                                        <span>Ferramentas</span>
+                                        <button type="button" onclick="closeToolDropdown()" class="tool-dropdown-close">✕</button>
+                                    </div>
+                                    <div class="tool-dropdown-item active" data-tool="">
+                                        <span class="tool-icon">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M12 2L2 7L12 12L22 7L12 2Z"></path>
+                                                <path d="M2 17L12 22L22 17"></path>
+                                                <path d="M2 12L12 17L22 12"></path>
+                                            </svg>
+                                        </span>
+                                        <div class="tool-info">
+                                            <div class="tool-name">Auto</div>
+                                            <div class="tool-desc">Deixar o agente decidir</div>
+                                        </div>
+                                    </div>
+                                    <div id="tool-list" class="tool-dropdown-list">
+                                        <!-- Tools serão carregadas aqui -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <input type="text" id="messageText" autocomplete="off" placeholder="Digite seu comando..." disabled/>
+                        </div>
+                        <button type="submit" id="sendButton" disabled>Enviar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let ws;
+            let reconnectInterval = null;
+            let reconnectAttempts = 0;
+            let isReconnecting = false;
+            const maxReconnectDelay = 30000;
+            const messagesContainer = document.getElementById('messages');
+            const statusDiv = document.getElementById('status');
+            const messageInput = document.getElementById("messageText");
+            const sendButton = document.getElementById("sendButton");
+            const notificationsContainer = document.getElementById('notifications-container');
+            const whatsappContainer = document.getElementById('whatsapp-container');
+            const titlebarFacial = document.getElementById('titlebar-facial');
+            const titlebarFacialPhoto = document.querySelector('.titlebar-facial-photo');
+            const titlebarFacialName = document.querySelector('.titlebar-facial-name');
+
+            // WebSocket Activity (Átomo)
+            const activityIndicator = document.querySelector('.atom-floating');
+            const activityStatus = document.getElementById('activity-status');
+            let activityTimeout = null;
+
+            // Estado dos popups
+            let currentPopupData = null;
+            let selectedSuggestion = null;
+            let popupQueue = [];
+
+            // ============ CONTROLE DE PERFORMANCE ============
+            let facialRecognitionEnabled = true;
+            let voiceEnabled = true;
+
+            // Toggle Reconhecimento Facial
+            function toggleFacialRecognition() {
+                facialRecognitionEnabled = !facialRecognitionEnabled;
+                const btn = document.getElementById('facial-toggle-btn');
+                
+                if (facialRecognitionEnabled) {
+                    btn.classList.add('active');
+                    addNotification('Reconhecimento facial ativado', 'success');
+                } else {
+                    btn.classList.remove('active');
+                    addNotification('Reconhecimento facial desativado', 'default');
+                    // Limpa a barra de status facial
+                    titlebarFacialName.textContent = 'Desativado';
+                    titlebarFacialPhoto.innerHTML = '';
+                    titlebarFacial.className = 'titlebar-facial';
+                }
+                
+                // Envia comando para o backend
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    fetch('http://localhost:8000/settings/facial', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: facialRecognitionEnabled })
+                    }).catch(err => console.error('[ERRO] Falha ao atualizar facial:', err));
+                }
+            }
+
+            // Toggle Voz
+            function toggleVoice() {
+                voiceEnabled = !voiceEnabled;
+                const btn = document.getElementById('voice-toggle-btn');
+                
+                if (voiceEnabled) {
+                    btn.classList.add('active');
+                    addNotification('Síntese de voz ativada', 'success');
+                } else {
+                    btn.classList.remove('active');
+                    addNotification('Síntese de voz desativada', 'default');
+                }
+                
+                // Envia comando para o backend
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    fetch('http://localhost:8000/settings/voice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ enabled: voiceEnabled })
+                    }).catch(err => console.error('[ERRO] Falha ao atualizar voz:', err));
+                }
+            }
+
+            // ============ CONTROLE DE LOADING ============
+            
+            // Inicia com titlebar em modo loading
+            const titlebar = document.querySelector('.titlebar');
+            titlebar.classList.add('loading-mode');
+
+            // ============ CONTROLES DA BARRA DE TÍTULO ============
+            
+            // Comunica com processo principal do Electron via window API
+            document.getElementById('minimize-btn').addEventListener('click', () => {
+                if (window.electron) window.electron.minimize();
+            });
+            
+            document.getElementById('maximize-btn').addEventListener('click', () => {
+                if (window.electron) window.electron.maximize();
+            });
+            
+            document.getElementById('close-btn').addEventListener('click', () => {
+                if (window.electron) window.electron.close();
+            });
+
+            // Detecta quando a janela está maximizada
+            if (window.electron) {
+                window.electron.onMaximize(() => {
+                    document.body.classList.add('maximized');
+                });
+                
+                window.electron.onUnmaximize(() => {
+                    document.body.classList.remove('maximized');
+                });
+            }
+
+            // ============ WEBSOCKET ACTIVITY ANIMATION ============
+            
+            function triggerActivity(message = 'Processando dados...') {
+                if (activityIndicator && activityStatus) {
+                    activityIndicator.classList.add('active');
+                    activityStatus.textContent = message;
+                    
+                    // Remove a classe após 2 segundos
+                    if (activityTimeout) clearTimeout(activityTimeout);
+                    activityTimeout = setTimeout(() => {
+                        activityIndicator.classList.remove('active');
+                        activityStatus.textContent = 'Sistema em espera';
+                    }, 2000);
+                }
+            }
+
+            // ============ RESIZE PANELS (como VS Code) ============
+            
+            function initResizers() {
+                const resizers = document.querySelectorAll('[data-direction]');
+                
+                resizers.forEach(resizer => {
+                    let isResizing = false;
+                    let startPos = 0;
+                    let startSize = 0;
+                    let element = null;
+                    
+                    resizer.addEventListener('mousedown', (e) => {
+                        isResizing = true;
+                        resizer.classList.add('resizing');
+                        
+                        const direction = resizer.getAttribute('data-direction');
+                        
+                        if (direction === 'vertical') {
+                            // Resize entre esquerda e direita
+                            element = resizer.previousElementSibling;
+                            startPos = e.clientX;
+                            startSize = element.offsetWidth;
+                        } else {
+                            // Resize entre painéis horizontais
+                            element = resizer.previousElementSibling;
+                            startPos = e.clientY;
+                            startSize = element.offsetHeight;
+                        }
+                        
+                        e.preventDefault();
+                        document.body.style.cursor = direction === 'vertical' ? 'col-resize' : 'row-resize';
+                        document.body.style.userSelect = 'none';
+                    });
+                    
+                    document.addEventListener('mousemove', (e) => {
+                        if (!isResizing) return;
+                        
+                        const direction = resizer.getAttribute('data-direction');
+                        
+                        if (direction === 'vertical') {
+                            const delta = e.clientX - startPos;
+                            const newWidth = startSize + delta;
+                            const container = element.parentElement;
+                            const minWidth = 300;
+                            const maxWidth = container.offsetWidth - 300 - 4;
+                            
+                            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                                element.style.width = newWidth + 'px';
+                            }
+                        } else {
+                            const delta = e.clientY - startPos;
+                            const newHeight = startSize + delta;
+                            const minHeight = 100;
+                            
+                            if (newHeight >= minHeight) {
+                                element.style.height = newHeight + 'px';
+                                element.style.flex = 'none';
+                            }
+                        }
+                    });
+                    
+                    document.addEventListener('mouseup', () => {
+                        if (isResizing) {
+                            isResizing = false;
+                            resizer.classList.remove('resizing');
+                            document.body.style.cursor = '';
+                            document.body.style.userSelect = '';
+                        }
+                    });
+                });
+            }
+            
+            // Inicializa resizers quando página carrega
+            initResizers();
+
+            // ============ POPUP UNIFICADO ============
+
+            function showUnifiedPopup(data) {
+                // Validação dos dados
+                if (!data || !data.sender_number) {
+                    console.error('[ERRO] Dados inválidos para popup:', data);
+                    return;
+                }
+                
+                // Se já existe popup aberto, adiciona à fila
+                const popup = document.getElementById('unified-popup');
+                if (currentPopupData && popup.style.display === 'flex') {
+                    console.log('[INFO] Popup aberto, adicionando à fila:', data.sender_name);
+                    popupQueue.push(data);
+                    updateQueueBadge();
+                    addNotification(`${popupQueue.length} mensagem(ns) na fila`, 'info');
+                    return;
+                }
+                
+                // Limpa popup antes de preencher
+                forceCleanPopup();
+                
+                // Aguarda um frame para garantir limpeza
+                requestAnimationFrame(() => {
+                    console.log('[INFO] Abrindo popup para:', data.sender_name);
+                    
+                    currentPopupData = data;
+                    selectedSuggestion = null;
+                    
+                    // Preenche informações
+                    document.getElementById('unified-sender').textContent = data.sender_name || 'Contato';
+                    document.getElementById('unified-number').textContent = data.sender_number;
+                    document.getElementById('unified-summary').textContent = data.summary || 'Nova mensagem recebida';
+                    document.getElementById('unified-original').textContent = data.original_message;
+                    document.getElementById('unified-input').value = '';
+                    
+                    // Cria botões de sugestões
+                    const suggestionsContainer = document.getElementById('unified-suggestions');
+                    suggestionsContainer.innerHTML = '';
+                    
+                    const suggestions = data.suggested_responses || ['Ok', 'Entendi'];
+                    
+                    suggestions.forEach((suggestion, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-suggestion';
+                        btn.textContent = suggestion;
+                        btn.setAttribute('data-index', index);
+                        btn.setAttribute('data-suggestion', suggestion);
+                        btn.onclick = () => selectSuggestion(suggestion, btn);
+                        suggestionsContainer.appendChild(btn);
+                    });
+                    
+                    console.log('[INFO] Popup aberto com', suggestionsContainer.children.length, 'botões');
+                    popup.style.display = 'flex';
+                });
+            }
+
+            function forceCleanPopup() {
+                console.log('[DEBUG] Limpando popup');
+                
+                // Limpa todos os elementos
+                document.getElementById('unified-sender').textContent = '';
+                document.getElementById('unified-number').textContent = '';
+                document.getElementById('unified-summary').textContent = '';
+                document.getElementById('unified-original').textContent = '';
+                document.getElementById('unified-input').value = '';
+                
+                // Remove todos os botões de sugestão
+                const suggestionsContainer = document.getElementById('unified-suggestions');
+                suggestionsContainer.innerHTML = '';
+                
+                // Reseta variáveis
+                selectedSuggestion = null;
+            }
+
+            function selectSuggestion(suggestion, buttonElement) {
+                // Remove seleção anterior
+                document.querySelectorAll('.btn-suggestion').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                // Marca botão como selecionado
+                buttonElement.classList.add('selected');
+                selectedSuggestion = suggestion;
+                
+                // Preenche o input com a sugestão (permite editar)
+                document.getElementById('unified-input').value = suggestion;
+            }
+
+            async function sendUnifiedResponse() {
+                if (!currentPopupData) {
+                    console.log('[AVISO] Nenhum popup ativo');
+                    return;
+                }
+                
+                // Pega resposta do input
+                const responseText = document.getElementById('unified-input').value.trim();
+                
+                if (!responseText) {
+                    addNotification('⚠ Selecione uma sugestão ou digite uma resposta', 'warning');
+                    return;
+                }
+                
+                console.log('[INFO] Enviando resposta:', responseText);
+                
+                try {
+                    const response = await fetch('http://localhost:8000/message/respond', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            sender_number: currentPopupData.sender_number,
+                            sender_name: currentPopupData.sender_name,
+                            original_message: currentPopupData.original_message,
+                            user_response: responseText,
+                            response_type: 'unified'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        // Apenas mostra notificação, não adiciona ao chat
+                        addNotification(`✓ Resposta enviada para ${currentPopupData.sender_name}`, 'success');
+                        // Removido: mensagens "Você respondeu" e "Mensagem enviada" do chat
+                    } else {
+                        console.error('[ERRO] Falha ao enviar:', data);
+                        addNotification('✗ Erro ao enviar resposta', 'error');
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Erro ao enviar resposta:', error);
+                    addNotification('✗ Erro ao enviar: ' + error.message, 'error');
+                } finally {
+                    // Sempre fecha o popup
+                    closeUnifiedPopup();
+                }
+            }
+
+            function closeUnifiedPopup() {
+                console.log('[INFO] Fechando popup');
+                
+                // Fecha e limpa
+                document.getElementById('unified-popup').style.display = 'none';
+                forceCleanPopup();
+                currentPopupData = null;
+                selectedSuggestion = null;
+                
+                console.log('[DEBUG] Fila:', popupQueue.length);
+                
+                // Processa próxima mensagem da fila
+                if (popupQueue.length > 0) {
+                    console.log('[INFO] Processando próxima mensagem...');
+                    const nextMessage = popupQueue.shift();
+                    updateQueueBadge();
+                    
+                    setTimeout(() => {
+                        console.log('[DEBUG] Abrindo:', nextMessage.sender_name);
+                        showUnifiedPopup(nextMessage);
+                    }, 500);
+                } else {
+                    updateQueueBadge();
+                }
+            }
+
+            function updateQueueBadge() {
+                const badge = document.getElementById('queue-badge');
+                if (popupQueue.length > 0) {
+                    badge.textContent = `+${popupQueue.length} na fila`;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // ============ WEBSOCKET ============
+            function connect() {
+                console.log('[DEBUG] Tentando conectar ao WebSocket...');
+                
+                // Atualiza status de loading
+                const loadingStatus = document.getElementById('loading-status');
+                if (loadingStatus) {
+                    loadingStatus.textContent = 'Conectando ao servidor...';
+                }
+                
+                try {
+                    ws = new WebSocket("ws://localhost:8000/ws");
+                    
+                    ws.onopen = function() {
+                        console.log('[DEBUG] WebSocket conectado com sucesso!');
+                        reconnectAttempts = 0;
+                        isReconnecting = false;
+                        if (reconnectInterval) {
+                            clearTimeout(reconnectInterval);
+                            reconnectInterval = null;
+                        }
+                        
+                        statusDiv.textContent = 'Conectado';
+                        statusDiv.className = 'status connected';
+                        
+                        // Habilita input e botão
+                        messageInput.disabled = false;
+                        sendButton.disabled = false;
+                        messageInput.placeholder = 'Digite seu comando...';
+                        
+                        addMessage('Conectado ao servidor', 'system');
+                        addNotification('Sistema conectado com sucesso', 'success');
+                        
+                        // Remove modo loading da titlebar
+                        titlebar.classList.remove('loading-mode');
+                        
+                        // Esconde a tela de loading com transição suave
+                        const loadingScreen = document.getElementById('loading-screen');
+                        if (loadingScreen) {
+                            loadingStatus.textContent = 'Conectado! ✓';
+                            setTimeout(() => {
+                                loadingScreen.classList.add('hide');
+                            }, 500);
+                        }
+                        
+                        // Carrega histórico de conversas
+                        loadConversationHistory();
+                        
+                        // Carrega schedulers
+                        loadSchedulers();
+                        
+                        // Carrega tools disponíveis
+                        loadTools();
+                    };
+
+                    ws.onclose = function(event) {
+                        console.log('[DEBUG] WebSocket fechado. Código:', event.code, 'Razão:', event.reason);
+                        statusDiv.textContent = 'Desconectado';
+                        statusDiv.className = 'status disconnected';
+                        
+                        // Desabilita input e botão
+                        messageInput.disabled = true;
+                        sendButton.disabled = true;
+                        messageInput.placeholder = 'Aguardando conexão...';
+                        
+                        // Só adiciona a mensagem se não estiver tentando reconectar
+                        if (!isReconnecting) {
+                            addMessage('Desconectado do servidor', 'system');
+                            addNotification('Sistema desconectado - Tentando reconectar...', 'warning');
+                            isReconnecting = true;
+                        }
+                        
+                        // Inicia reconexão automática
+                        reconnect();
+                    };
+
+                    ws.onerror = function(error) {
+                        console.error('[ERRO] WebSocket error:', error);
+                        console.log('[DEBUG] Estado do WebSocket:', ws.readyState);
+                        if (!isReconnecting) {
+                            addNotification('Erro na conexão com o servidor', 'error');
+                        }
+                    };
+
+                    ws.onmessage = function(event) {
+                        console.log('[WS] Mensagem recebida:', event.data);
+                        
+                        // Ativa animação de atividade
+                        triggerActivity('Mensagem recebida');
+                        
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('[WS] JSON parseado:', data);
+                            
+                            // Verifica o tipo de evento
+                            switch(data.type) {
+                                case 'message':
+                                    // Mensagem normal do chat
+                                    addMessage(data.msg, 'bot');
+                                    break;
+                                    
+                                case 'notification':
+                                    // Notificação persistente
+                                    addNotification(data.msg, data.notificationType || 'info');
+                                    break;
+                                    
+                                case 'evolution_api':
+                                    // Evento específico da Evolution API
+                                    addNotification(`Evolution API: ${data.msg}`, 'info');
+                                    break;
+                                    
+                                case 'whatsapp_message':
+                                    // Mensagem do WhatsApp
+                                    addWhatsAppMessage(data.msg, data.sender || 'Contato');
+                                    // Notificação sonora/visual
+                                    addNotification(`Nova mensagem de ${data.sender}`, 'info');
+                                    break;
+                                    
+                                case 'unified_request':
+                                    // Popup unificado (único tipo de popup agora)
+                                    showUnifiedPopup(data);
+                                    addNotification(`Mensagem de ${data.sender_name} - Responda`, 'warning');
+                                    break;
+                                    
+                                case 'facial_recognition':
+                                    // Reconhecimento Facial (apenas atualiza a barra de status)
+                                    console.log('[FACIAL] Reconhecimento recebido:', data.name, data.status);
+                                    addFacialRecognition(data.name, data.confidence, data.status, data.photo);
+                                    break;
+                                
+                                case 'user_detected':
+                                    // Usuário detectado - só mostra a mensagem (o facial_recognition já mostrou a foto)
+                                    if (data.msg) {
+                                        addMessage(data.msg, 'bot');
+                                    }
+                                    break;
+                                
+                                case 'scheduler_created':
+                                case 'scheduler_updated':
+                                case 'scheduler_deleted':
+                                case 'scheduler_toggled':
+                                    // Eventos de schedulers - apenas recarrega a lista
+                                    console.log('[SCHEDULER] Evento recebido:', data.type);
+                                    if (typeof loadSchedulers === 'function') {
+                                        loadSchedulers();
+                                    }
+                                    break;
+                                    
+                                default:
+                                    // Se não tiver tipo, trata como mensagem normal
+                                    console.log('[WS] Tipo desconhecido ou sem tipo:', data.type);
+                                    if (data.msg) {
+                                        addMessage(data.msg, 'bot');
+                                    } else {
+                                        addMessage(event.data, 'bot');
+                                    }
+                            }
+                        } catch (e) {
+                            // Se não for JSON, mostra como texto
+                            addMessage(event.data, 'bot');
+                        }
+                    };
+                } catch (error) {
+                    console.error('[ERRO] Falha ao criar WebSocket:', error);
+                    addNotification('Erro ao conectar com o servidor', 'error');
+                    reconnect();
+                }
+            }
+
+            // Reconexão automática com backoff exponencial
+            function reconnect() {
+                if (reconnectInterval) return; // Já está tentando reconectar
+                
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+                let remainingTime = Math.round(delay / 1000);
+                
+                statusDiv.textContent = `Reconectando em ${remainingTime}s...`;
+                
+                // Mostra tela de loading se desconectou
+                const loadingScreen = document.getElementById('loading-screen');
+                const loadingStatus = document.getElementById('loading-status');
+                if (loadingScreen && reconnectAttempts > 2) { // Só mostra após algumas tentativas
+                    loadingScreen.classList.remove('hide');
+                    titlebar.classList.add('loading-mode'); // Volta ao modo loading
+                    loadingStatus.textContent = `Reconectando... Tentativa ${reconnectAttempts}`;
+                }
+                
+                // Atualiza contagem a cada segundo
+                const countdownInterval = setInterval(() => {
+                    remainingTime--;
+                    statusDiv.textContent = remainingTime > 0 
+                        ? `Reconectando em ${remainingTime}s...` 
+                        : 'Conectando...';
+                    
+                    if (loadingStatus && loadingScreen && !loadingScreen.classList.contains('hide')) {
+                        loadingStatus.textContent = remainingTime > 0 
+                            ? `Reconectando em ${remainingTime}s... (Tentativa ${reconnectAttempts})`
+                            : 'Conectando...';
+                    }
+                }, 1000);
+                
+                reconnectInterval = setTimeout(() => {
+                    clearInterval(countdownInterval);
+                    console.log(`Tentativa de reconexão ${reconnectAttempts}...`);
+                    reconnectInterval = null;
+                    connect();
+                }, delay);
+            }
+
+            // Helper para formatar texto (com ou sem marked)
+            function formatText(text) {
+                if (typeof marked !== 'undefined' && marked.parse) {
+                    try {
+                        return marked.parse(text);
+                    } catch (e) {
+                        console.warn('[AVISO] Erro ao usar marked:', e);
+                    }
+                }
+                // Fallback: formatação básica
+                return text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                    .replace(/`(.+?)`/g, '<code>$1</code>');
+            }
+
+            // Adiciona mensagem no chat
+            function addMessage(text, type = 'bot', showTime = true) {
+                const message = document.createElement('li');
+                message.className = `${type}-message`;
+                
+                const content = document.createElement('div');
+                content.className = 'message-content';
+                content.innerHTML = formatText(text);
+                message.appendChild(content);
+                
+                // Adiciona timestamp se necessário
+                if (showTime && type !== 'system') {
+                    const timestamp = document.createElement('span');
+                    timestamp.className = 'message-time';
+                    const now = new Date();
+                    timestamp.textContent = now.toLocaleTimeString('pt-BR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    message.appendChild(timestamp);
+                }
+                
+                messagesContainer.appendChild(message);
+                
+                // Auto-scroll para última mensagem
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // Adiciona notificação persistente (superior esquerdo)
+            function addNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification-item notification-${type}`;
+                
+                const content = document.createElement('div');
+                content.className = 'notification-content';
+                content.innerHTML = formatText(message);
+                
+                const time = document.createElement('div');
+                time.className = 'notification-time';
+                time.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                
+                notification.appendChild(content);
+                notification.appendChild(time);
+                notificationsContainer.insertBefore(notification, notificationsContainer.firstChild);
+                
+                // Atualiza badge
+                updateBadge('notifications-badge', notificationsContainer.children.length);
+                
+                // Limita a 50 notificações
+                while (notificationsContainer.children.length > 50) {
+                    notificationsContainer.removeChild(notificationsContainer.lastChild);
+                }
+            }
+
+            // Adiciona mensagem do WhatsApp (inferior esquerdo)
+            function addWhatsAppMessage(message, sender = '') {
+                const whatsappMsg = document.createElement('div');
+                whatsappMsg.className = 'whatsapp-message';
+                
+                const header = document.createElement('div');
+                header.className = 'whatsapp-header';
+                header.textContent = sender || 'WhatsApp';
+                
+                const content = document.createElement('div');
+                content.className = 'whatsapp-content';
+                content.innerHTML = formatText(message);
+                
+                const time = document.createElement('div');
+                time.className = 'whatsapp-time';
+                time.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                
+                whatsappMsg.appendChild(header);
+                whatsappMsg.appendChild(content);
+                whatsappMsg.appendChild(time);
+                whatsappContainer.insertBefore(whatsappMsg, whatsappContainer.firstChild);
+                
+                // Atualiza badge
+                updateBadge('whatsapp-badge', whatsappContainer.children.length);
+                
+                // Limita a 50 mensagens
+                while (whatsappContainer.children.length > 50) {
+                    whatsappContainer.removeChild(whatsappContainer.lastChild);
+                }
+            }
+
+            // Atualiza badge do card
+            function updateBadge(badgeId, count) {
+                const badge = document.getElementById(badgeId);
+                if (badge) {
+                    badge.textContent = count;
+                    if (count > 0) {
+                        badge.style.background = '#3a3a3a';
+                        badge.style.color = '#e5e5e5';
+                    } else {
+                        badge.style.background = '#2a2a2a';
+                        badge.style.color = '#b0b0b0';
+                    }
+                }
+            }
+
+            // Adiciona reconhecimento facial na barra de título
+            function addFacialRecognition(name, confidence = 0, status = 'unknown', photo = null) {
+                // Se o facial recognition está desabilitado, ignora
+                if (!facialRecognitionEnabled) {
+                    console.log('[FACIAL] Reconhecimento desabilitado - ignorando');
+                    return;
+                }
+                
+                console.log('[FACIAL] Atualizando barra:', name, status, confidence);
+                
+                // Remove classes anteriores
+                titlebarFacial.classList.remove('facial-active', 'facial-unauthorized', 'facial-unknown');
+                
+                // Adiciona classe baseada no status
+                if (status === 'authorized') {
+                    titlebarFacial.classList.add('facial-active');
+                } else if (status === 'unauthorized') {
+                    titlebarFacial.classList.add('facial-unauthorized');
+                } else {
+                    titlebarFacial.classList.add('facial-unknown');
+                }
+                
+                // Atualiza foto
+                if (photo) {
+                    titlebarFacialPhoto.innerHTML = `<img src="${photo}" alt="${name}">`;
+                } else {
+                    titlebarFacialPhoto.innerHTML = '';
+                }
+                
+                // Atualiza nome
+                titlebarFacialName.textContent = name || 'Desconhecido';
+                
+                // Animação suave
+                titlebarFacial.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    titlebarFacial.style.transform = 'scale(1)';
+                }, 300);
+                
+                console.log('[FACIAL] Barra atualizada!');
+            }
+
+            // ============ HISTÓRICO DE CONVERSAS ============
+            
+            async function loadConversationHistory() {
+                try {
+                    const response = await fetch('http://localhost:8000/conversations/grouped');
+                    const data = await response.json();
+                    
+                    if (data.conversations) {
+                        displayGroupedConversations(data.conversations);
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Falha ao carregar histórico:', error);
+                }
+            }
+            
+            function displayGroupedConversations(conversations) {
+                // Limpa mensagens atuais
+                messagesContainer.innerHTML = '';
+                
+                // Ordena as chaves de data (mais antigas primeiro)
+                const dateLabels = Object.keys(conversations);
+                
+                // Processa cada grupo de data
+                dateLabels.forEach(dateLabel => {
+                    // Adiciona separador de data
+                    const dateSeparator = document.createElement('li');
+                    dateSeparator.className = 'date-separator';
+                    dateSeparator.innerHTML = `<span>${dateLabel}</span>`;
+                    messagesContainer.appendChild(dateSeparator);
+                    
+                    // Adiciona mensagens desse dia
+                    const messages = conversations[dateLabel];
+                    messages.forEach(msg => {
+                        const message = document.createElement('li');
+                        message.className = msg.role === 'user' ? 'user-message' : 'bot-message';
+                        
+                        const content = document.createElement('div');
+                        content.className = 'message-content';
+                        content.innerHTML = formatText(msg.content);
+                        message.appendChild(content);
+                        
+                        // Adiciona timestamp
+                        const timestamp = document.createElement('span');
+                        timestamp.className = 'message-time';
+                        const msgTime = new Date(msg.timestamp);
+                        timestamp.textContent = msgTime.toLocaleTimeString('pt-BR', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                        });
+                        message.appendChild(timestamp);
+                        
+                        messagesContainer.appendChild(message);
+                    });
+                });
+                
+                // Auto-scroll para última mensagem
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            async function clearConversationHistory() {
+                if (!confirm('Tem certeza que deseja limpar todo o histórico?')) {
+                    return;
+                }
+                
+                try {
+                    await fetch('http://localhost:8000/conversations/clear', {
+                        method: 'DELETE'
+                    });
+                    
+                    messagesContainer.innerHTML = '';
+                    addNotification('Histórico limpo com sucesso', 'success');
+                } catch (error) {
+                    console.error('[ERRO] Falha ao limpar histórico:', error);
+                    addNotification('Erro ao limpar histórico', 'error');
+                }
+            }
+
+            // ============ SCHEDULERS ============
+
+            const schedulersContainer = document.getElementById('schedulers-container');
+            let currentSchedulers = [];
+            let editingSchedulerId = null;
+
+            // Abre modal de schedulers
+            function openSchedulerModal() {
+                const modal = document.getElementById('scheduler-modal');
+                modal.style.display = 'flex';
+                
+                // Força o reflow para garantir que o modal seja renderizado
+                modal.offsetHeight;
+                
+                loadSchedulers();
+                
+                // Garante que o modal e seus inputs recebam foco corretamente
+                setTimeout(() => {
+                    const firstInput = modal.querySelector('input[type="text"]');
+                    if (firstInput) {
+                        firstInput.focus();
+                        // Garante que o cursor apareça
+                        firstInput.click();
+                    }
+                }, 150);
+            }
+
+            // Fecha modal de schedulers
+            function closeSchedulerModal() {
+                const modal = document.getElementById('scheduler-modal');
+                modal.style.display = 'none';
+                cancelEdit();
+            }
+
+            // Carrega lista de schedulers
+            async function loadSchedulers() {
+                try {
+                    const response = await fetch('http://localhost:8000/schedulers');
+                    const data = await response.json();
+                    currentSchedulers = data.schedulers || [];
+                    displaySchedulers();
+                    displaySchedulersPanel();
+                } catch (error) {
+                    console.error('[ERRO] Falha ao carregar schedulers:', error);
+                }
+            }
+
+            // Exibe schedulers no modal
+            function displaySchedulers() {
+                const listContainer = document.getElementById('scheduler-list');
+                listContainer.innerHTML = '';
+
+                if (currentSchedulers.length === 0) {
+                    listContainer.innerHTML = '<p class="empty-message">Nenhum agendamento criado ainda.</p>';
+                    return;
+                }
+
+                currentSchedulers.forEach(scheduler => {
+                    const item = document.createElement('div');
+                    item.className = 'scheduler-item';
+                    if (!scheduler.enabled) {
+                        item.classList.add('disabled');
+                    }
+
+                    const header = document.createElement('div');
+                    header.className = 'scheduler-item-header';
+                    header.innerHTML = `<strong>${scheduler.name}</strong>`;
+
+                    const info = document.createElement('div');
+                    info.className = 'scheduler-item-info';
+                    info.innerHTML = `
+                        <div><strong>Tipo:</strong> ${getScheduleTypeLabel(scheduler.schedule_type)}</div>
+                        <div><strong>Prompt:</strong> ${scheduler.prompt}</div>
+                        <div><strong>Próxima execução:</strong> ${formatNextRun(scheduler.next_run)}</div>
+                        ${scheduler.last_run ? `<div><strong>Última execução:</strong> ${formatDateTime(scheduler.last_run)}</div>` : ''}
+                    `;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'scheduler-item-actions';
+                    actions.innerHTML = `
+                        <button onclick="editScheduler('${scheduler.id}')" class="btn-edit">Editar</button>
+                        <button onclick="toggleScheduler('${scheduler.id}', ${!scheduler.enabled})" class="btn-toggle">
+                            ${scheduler.enabled ? 'Pausar' : 'Ativar'}
+                        </button>
+                        <button onclick="deleteScheduler('${scheduler.id}')" class="btn-delete">Deletar</button>
+                    `;
+
+                    item.appendChild(header);
+                    item.appendChild(info);
+                    item.appendChild(actions);
+                    listContainer.appendChild(item);
+                });
+            }
+
+            // Exibe próximos schedulers no painel lateral
+            function displaySchedulersPanel() {
+                schedulersContainer.innerHTML = '';
+
+                if (currentSchedulers.length === 0) {
+                    schedulersContainer.innerHTML = '<p class="empty-message">Nenhum agendamento.</p>';
+                    updateBadge('schedulers-badge', 0);
+                    return;
+                }
+
+                // Filtra apenas schedulers ativos e ordena por próxima execução
+                const activeSchedulers = currentSchedulers
+                    .filter(s => s.enabled && s.next_run)
+                    .sort((a, b) => new Date(a.next_run) - new Date(b.next_run))
+                    .slice(0, 5); // Mostra apenas os próximos 5
+
+                updateBadge('schedulers-badge', activeSchedulers.length);
+
+                if (activeSchedulers.length === 0) {
+                    schedulersContainer.innerHTML = '<p class="empty-message">Nenhum agendamento ativo.</p>';
+                    return;
+                }
+
+                activeSchedulers.forEach(scheduler => {
+                    const item = document.createElement('div');
+                    item.className = 'scheduler-panel-item';
+                    item.innerHTML = `
+                        <div class="scheduler-panel-name">${scheduler.name}</div>
+                        <div class="scheduler-panel-time">${formatNextRun(scheduler.next_run)}</div>
+                        <div class="scheduler-panel-prompt">${scheduler.prompt}</div>
+                    `;
+                    schedulersContainer.appendChild(item);
+                });
+            }
+
+            // Atualiza campos do formulário baseado no tipo
+            function updateScheduleFields() {
+                const type = document.getElementById('scheduler-type').value;
+                
+                // Esconde todos
+                document.querySelectorAll('.schedule-type-fields').forEach(el => {
+                    el.style.display = 'none';
+                });
+
+                // Mostra o selecionado
+                document.getElementById(`${type}-fields`).style.display = 'block';
+            }
+
+            // Salva scheduler (criar ou atualizar)
+            async function saveScheduler(event) {
+                event.preventDefault();
+
+                const name = document.getElementById('scheduler-name').value;
+                const prompt = document.getElementById('scheduler-prompt').value;
+                const scheduleType = document.getElementById('scheduler-type').value;
+
+                let scheduleData = {};
+
+                // Monta schedule_data baseado no tipo
+                if (scheduleType === 'date') {
+                    const datetime = document.getElementById('date-datetime').value;
+                    if (!datetime) {
+                        alert('Por favor, selecione data e hora');
+                        return;
+                    }
+                    scheduleData = { run_date: datetime };
+                } else if (scheduleType === 'interval') {
+                    const value = parseInt(document.getElementById('interval-value').value);
+                    const unit = document.getElementById('interval-unit').value;
+                    scheduleData = { [unit]: value };
+                } else if (scheduleType === 'cron') {
+                    const hour = parseInt(document.getElementById('cron-hour').value);
+                    const minute = parseInt(document.getElementById('cron-minute').value);
+                    
+                    // Coleta dias da semana selecionados
+                    const selectedDays = Array.from(document.querySelectorAll('.weekday-selector input:checked'))
+                        .map(cb => cb.value);
+                    
+                    scheduleData = { hour, minute };
+                    if (selectedDays.length > 0) {
+                        scheduleData.day_of_week = selectedDays.join(',');
+                    }
+                }
+
+                const payload = {
+                    name,
+                    prompt,
+                    schedule_type: scheduleType,
+                    schedule_data: scheduleData
+                };
+
+                try {
+                    let response;
+                    if (editingSchedulerId) {
+                        // Atualizar scheduler existente
+                        response = await fetch(`http://localhost:8000/schedulers/${editingSchedulerId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    } else {
+                        // Criar novo scheduler
+                        response = await fetch('http://localhost:8000/schedulers', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                    }
+
+                    if (response.ok) {
+                        const action = editingSchedulerId ? 'atualizado' : 'criado';
+                        addNotification(`Agendamento "${name}" ${action} com sucesso!`, 'success');
+                        cancelEdit();
+                        loadSchedulers();
+                    } else {
+                        const error = await response.json();
+                        alert(`Erro: ${error.detail}`);
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Falha ao salvar scheduler:', error);
+                    alert('Erro ao salvar agendamento');
+                }
+            }
+
+            // Edita scheduler existente
+            function editScheduler(schedulerId) {
+                const scheduler = currentSchedulers.find(s => s.id === schedulerId);
+                if (!scheduler) return;
+
+                editingSchedulerId = schedulerId;
+
+                // Atualiza título e botão do formulário
+                document.getElementById('form-title').textContent = 'Editar Agendamento';
+                document.getElementById('form-submit-btn').textContent = 'Atualizar Agendamento';
+                document.getElementById('form-cancel-btn').textContent = 'Cancelar';
+
+                // Preenche campos básicos
+                document.getElementById('scheduler-name').value = scheduler.name;
+                document.getElementById('scheduler-prompt').value = scheduler.prompt;
+                document.getElementById('scheduler-type').value = scheduler.schedule_type;
+
+                // Atualiza campos específicos do tipo
+                updateScheduleFields();
+
+                // Preenche dados específicos do tipo
+                const data = scheduler.schedule_data;
+                if (scheduler.schedule_type === 'date') {
+                    if (data.run_date) {
+                        // Converte para formato datetime-local
+                        const date = new Date(data.run_date);
+                        const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                            .toISOString().slice(0, 16);
+                        document.getElementById('date-datetime').value = localDateTime;
+                    }
+                } else if (scheduler.schedule_type === 'interval') {
+                    if (data.minutes) {
+                        document.getElementById('interval-value').value = data.minutes;
+                        document.getElementById('interval-unit').value = 'minutes';
+                    } else if (data.hours) {
+                        document.getElementById('interval-value').value = data.hours;
+                        document.getElementById('interval-unit').value = 'hours';
+                    } else if (data.days) {
+                        document.getElementById('interval-value').value = data.days;
+                        document.getElementById('interval-unit').value = 'days';
+                    }
+                } else if (scheduler.schedule_type === 'cron') {
+                    if (data.hour !== undefined) {
+                        document.getElementById('cron-hour').value = data.hour;
+                    }
+                    if (data.minute !== undefined) {
+                        document.getElementById('cron-minute').value = data.minute;
+                    }
+                    if (data.day_of_week) {
+                        const days = data.day_of_week.split(',');
+                        document.querySelectorAll('.weekday-selector input').forEach(cb => {
+                            cb.checked = days.includes(cb.value);
+                        });
+                    }
+                }
+
+                // Scroll para o formulário
+                document.querySelector('.scheduler-form-section').scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Cancela edição
+            function cancelEdit() {
+                editingSchedulerId = null;
+                document.getElementById('form-title').textContent = 'Novo Agendamento';
+                document.getElementById('form-submit-btn').textContent = 'Criar Agendamento';
+                document.getElementById('form-cancel-btn').textContent = 'Limpar';
+                resetSchedulerForm();
+            }
+
+            // Deleta scheduler
+            async function deleteScheduler(schedulerId) {
+                if (!confirm('Tem certeza que deseja deletar este agendamento?')) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`http://localhost:8000/schedulers/${schedulerId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        addNotification('Agendamento deletado', 'success');
+                        loadSchedulers();
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Falha ao deletar scheduler:', error);
+                    alert('Erro ao deletar agendamento');
+                }
+            }
+
+            // Ativa/desativa scheduler
+            async function toggleScheduler(schedulerId, enabled) {
+                try {
+                    const response = await fetch(`http://localhost:8000/schedulers/${schedulerId}/toggle?enabled=${enabled}`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        addNotification(enabled ? 'Agendamento ativado' : 'Agendamento pausado', 'info');
+                        loadSchedulers();
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Falha ao alternar scheduler:', error);
+                    alert('Erro ao alternar agendamento');
+                }
+            }
+
+            // Reseta formulário
+            function resetSchedulerForm() {
+                document.getElementById('scheduler-form').reset();
+                document.querySelectorAll('.weekday-selector input').forEach(cb => {
+                    cb.checked = false;
+                });
+                updateScheduleFields();
+            }
+
+            // Helpers de formatação
+            function getScheduleTypeLabel(type) {
+                const labels = {
+                    'date': 'Data Única',
+                    'interval': 'Intervalo',
+                    'cron': 'Dias/Horários'
+                };
+                return labels[type] || type;
+            }
+
+            function formatDateTime(isoString) {
+                if (!isoString) return 'Nunca';
+                const date = new Date(isoString);
+                return date.toLocaleString('pt-BR');
+            }
+
+            function formatNextRun(isoString) {
+                if (!isoString) return 'Não agendado';
+                const date = new Date(isoString);
+                const now = new Date();
+                const diff = date - now;
+
+                if (diff < 0) return 'Vencido';
+
+                // Se for hoje
+                if (date.toDateString() === now.toDateString()) {
+                    return `Hoje às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+
+                // Se for amanhã
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                if (date.toDateString() === tomorrow.toDateString()) {
+                    return `Amanhã às ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                }
+
+                // Caso contrário
+                return date.toLocaleString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+
+            // Carrega schedulers periodicamente (a cada 30 segundos)
+            setInterval(() => {
+                loadSchedulers();
+            }, 30000);
+
+            // ============ FIM SCHEDULERS ============
+
+            // ============ TOOLS ============
+            
+            const toolButton = document.getElementById('tool-button');
+            const toolDropdown = document.getElementById('tool-dropdown');
+            const toolList = document.getElementById('tool-list');
+            let selectedTool = null;
+            
+            // Ícones SVG para diferentes tipos de tools
+            const toolIcons = {
+                'show_response_popup': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>`,
+                'open_application': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                </svg>`,
+                'default': `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>`
+            };
+            
+            // Abre/fecha dropdown
+            toolButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isOpen = toolDropdown.classList.contains('show');
+                
+                if (isOpen) {
+                    closeToolDropdown();
+                } else {
+                    // Calcula posição do botão
+                    const rect = toolButton.getBoundingClientRect();
+                    const dropdownMaxHeight = 400;
+                    const dropdownMinWidth = 320;
+                    
+                    // Calcula largura disponível
+                    const availableWidth = window.innerWidth - 32; // 16px de margem de cada lado
+                    const dropdownWidth = Math.min(dropdownMinWidth, availableWidth);
+                    
+                    // Determina se deve abrir para cima ou para baixo
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const spaceAbove = rect.top;
+                    
+                    let top, left;
+                    
+                    // Posição vertical
+                    if (spaceBelow >= dropdownMaxHeight || spaceBelow > spaceAbove) {
+                        // Abre para baixo
+                        top = rect.bottom + 8;
+                    } else {
+                        // Abre para cima
+                        top = rect.top - Math.min(dropdownMaxHeight, spaceAbove - 8);
+                    }
+                    
+                    // Posição horizontal
+                    left = rect.left;
+                    
+                    // Ajusta se sair da tela pela direita
+                    if (left + dropdownWidth > window.innerWidth - 16) {
+                        left = window.innerWidth - dropdownWidth - 16;
+                    }
+                    
+                    // Ajusta se sair da tela pela esquerda
+                    if (left < 16) {
+                        left = 16;
+                    }
+                    
+                    // Aplica posição e largura
+                    toolDropdown.style.top = `${top}px`;
+                    toolDropdown.style.left = `${left}px`;
+                    toolDropdown.style.width = `${dropdownWidth}px`;
+                    
+                    // Abre dropdown
+                    toolDropdown.classList.add('show');
+                    toolButton.classList.add('active');
+                }
+            });
+            
+            // Fecha dropdown
+            function closeToolDropdown() {
+                toolDropdown.classList.remove('show');
+                toolButton.classList.remove('active');
+            }
+            
+            // Fecha ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!toolButton.contains(e.target) && !toolDropdown.contains(e.target)) {
+                    closeToolDropdown();
+                }
+            });
+            
+            // Fecha ao redimensionar janela
+            window.addEventListener('resize', function() {
+                if (toolDropdown.classList.contains('show')) {
+                    closeToolDropdown();
+                }
+            });
+            
+            // Seleciona uma tool
+            function selectTool(toolName, toolDesc) {
+                selectedTool = toolName || null;
+                
+                // Remove active de todos os itens
+                document.querySelectorAll('.tool-dropdown-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Adiciona active no item clicado
+                const clickedItem = document.querySelector(`[data-tool="${toolName || ''}"]`);
+                if (clickedItem) {
+                    clickedItem.classList.add('active');
+                }
+                
+                // Atualiza visual do botão
+                if (selectedTool) {
+                    toolButton.classList.add('has-tool');
+                } else {
+                    toolButton.classList.remove('has-tool');
+                }
+                
+                console.log('[TOOL] Selecionada:', selectedTool || 'Auto');
+                closeToolDropdown();
+            }
+            
+            // Carrega lista de tools disponíveis
+            async function loadTools() {
+                try {
+                    const response = await fetch('http://localhost:8000/tools');
+                    const data = await response.json();
+                    
+                    // Limpa lista
+                    toolList.innerHTML = '';
+                    
+                    // Adiciona cada tool dinamicamente
+                    data.tools.forEach(tool => {
+                        const item = document.createElement('div');
+                        item.className = 'tool-dropdown-item';
+                        item.setAttribute('data-tool', tool.name);
+                        
+                        const icon = toolIcons[tool.name] || toolIcons.default;
+                        
+                        item.innerHTML = `
+                            <span class="tool-icon">${icon}</span>
+                            <div class="tool-info">
+                                <div class="tool-name">${tool.name}</div>
+                                <div class="tool-desc" title="${tool.description}">${tool.description}</div>
+                            </div>
+                        `;
+                        
+                        item.addEventListener('click', () => {
+                            selectTool(tool.name, tool.description);
+                        });
+                        
+                        toolList.appendChild(item);
+                    });
+                    
+                    // Adiciona evento ao item "Auto"
+                    const autoItem = document.querySelector('[data-tool=""]');
+                    if (autoItem) {
+                        autoItem.addEventListener('click', () => {
+                            selectTool(null, 'Deixar o agente decidir');
+                        });
+                    }
+                    
+                    console.log('[TOOLS] Carregadas:', data.tools.length, 'ferramentas');
+                } catch (error) {
+                    console.error('[ERRO] Falha ao carregar tools:', error);
+                }
+            }
+            
+            // ============ FIM TOOLS ============
+
+            function sendMessage(event) {
+                event.preventDefault();
+                
+                const text = messageInput.value.trim();
+                if (!text) return;
+
+                // Verifica se está conectado
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    console.error('[ERRO] WebSocket não conectado. Estado:', ws ? ws.readyState : 'undefined');
+                    addMessage('Não conectado ao servidor', 'system');
+                    addNotification('Não conectado - Tentando reconectar...', 'error');
+                    
+                    if (!reconnectInterval) connect();
+                    return;
+                }
+
+                console.log('[INFO] Enviando mensagem:', text);
+                addMessage(text, 'user');
+                
+                try {
+                    // Pega a tool selecionada (agora da variável selectedTool)
+                    const forcedTool = selectedTool || null;
+                    
+                    // Se há tool selecionada, envia como JSON
+                    if (forcedTool) {
+                        const payload = {
+                            message: text,
+                            forced_tool: forcedTool
+                        };
+                        ws.send(JSON.stringify(payload));
+                        console.log('[INFO] Mensagem enviada com tool forçada:', forcedTool);
+                    } else {
+                        // Senão, envia texto simples (comportamento antigo)
+                        ws.send(text);
+                        console.log('[INFO] Mensagem enviada (auto)');
+                    }
+                } catch (error) {
+                    console.error('[ERRO] Falha ao enviar:', error);
+                    addMessage('Erro ao enviar: ' + error.message, 'system');
+                }
+                
+                messageInput.value = '';
+            }
+
+            // ============ FIX MODAL INPUTS ============
+            // Garante que o modal do scheduler permita digitação normalmente
+            document.addEventListener('DOMContentLoaded', () => {
+                const schedulerModal = document.getElementById('scheduler-modal');
+                
+                // Previne que eventos do modal se propaguem para o documento
+                if (schedulerModal) {
+                    schedulerModal.addEventListener('click', (e) => {
+                        // Fecha apenas se clicar no overlay (fundo), não no conteúdo
+                        if (e.target === schedulerModal) {
+                            closeSchedulerModal();
+                        }
+                    });
+                    
+                    // Garante que inputs do modal sempre funcionem
+                    const modalContent = schedulerModal.querySelector('.scheduler-modal-content');
+                    if (modalContent) {
+                        modalContent.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                        
+                        // Garante que todos os inputs podem receber foco
+                        modalContent.addEventListener('mousedown', (e) => {
+                            if (e.target.tagName === 'INPUT' || 
+                                e.target.tagName === 'TEXTAREA' || 
+                                e.target.tagName === 'SELECT') {
+                                e.stopPropagation();
+                            }
+                        });
+                    }
+                }
+            });
+
+            // Inicia a conexão
+            connect();
+        </script>
+    </body>
+</html>

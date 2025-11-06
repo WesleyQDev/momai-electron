@@ -1,0 +1,39 @@
+{
+  "name": "electron-momai-v2",
+  "version": "1.0.0",
+  "description": "MomAI v2 - Assistente Pessoal Inteligente",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "build": "electron-forge make",
+    "build:win": "electron-forge make --platform=win32"
+  },
+  "keywords": [
+    "ai",
+    "assistant",
+    "chatbot",
+    "electron"
+  ],
+  "author": {
+    "name": "Wesley",
+    "email": "seu-email@example.com"
+  },
+  "license": "ISC",
+  "packageManager": "pnpm@10.19.0",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/core": "^7.10.2",
+    "@electron-forge/maker-squirrel": "^7.10.2",
+    "@electron-forge/maker-zip": "^7.10.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.10.2",
+    "electron": "^38.4.0",
+    "electron-squirrel-startup": "^1.0.1"
+  },
+  "dependencies": {
+    "marked": "^16.4.1",
+    "tree-kill": "^1.2.2"
+  }
+}
